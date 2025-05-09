@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erweiterter 3D Produktverpackungs-Visualisierer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.min.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div id="nachrichtenBoxContainer" class="fixed top-5 right-5 z-50 w-full max-w-sm"></div>
+
+    <div class="steuerungsPanel container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-indigo-600 mb-6">3D Produktverpackungs-Visualisierer</h1>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">1. Verfügbare Kistentypen definieren</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div>
+                    <label for="kistenTypName" class="block text-sm font-medium text-gray-700 mb-1">Kistenname</label>
+                    <input type="text" id="kistenTypName" placeholder="z.B. Kleine Versandkiste" class="w-full">
+                </div>
+                <div>
+                    <label for="kistenTypBreite" class="block text-sm font-medium text-gray-700 mb-1">Breite (cm)</label>
+                    <input type="number" id="kistenTypBreite" placeholder="B" min="1" step="0.1" value="20" class="w-full">
+                </div>
+                <div>
+                    <label for="kistenTypHoehe" class="block text-sm font-medium text-gray-700 mb-1">Höhe (cm)</label>
+                    <input type="number" id="kistenTypHoehe" placeholder="H" min="1" step="0.1" value="15" class="w-full">
+                </div>
+                <div>
+                    <label for="kistenTypTiefe" class="block text-sm font-medium text-gray-700 mb-1">Tiefe (cm)</label>
+                    <input type="number" id="kistenTypTiefe" placeholder="T" min="1" step="0.1" value="10" class="w-full">
+                </div>
+            </div>
+            <button id="kistenTypHinzufuegenKnopf" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md shadow">Kistentyp hinzufügen</button>
+            
+            <h3 class="text-lg font-semibold mt-6 mb-2 text-gray-700">Definierte Kistentypen:</h3>
+            <div id="kistenTypListe" class="listenContainer max-h-40 overflow-y-auto space-y-2 border p-3 rounded-md bg-gray-50">
+                <p class="text-gray-500 italic">Noch keine Kistentypen definiert. Fügen Sie einen hinzu.</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">2. Zu verpackende Produkte hinzufügen</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                <div>
+                    <label for="produktName" class="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
+                    <input type="text" id="produktName" placeholder="z.B. Dose, Ring" class="w-full">
+                </div>
+                <div>
+                    <label for="produktForm" class="block text-sm font-medium text-gray-700 mb-1">Form</label>
+                    <select id="produktForm" class="w-full">
+                        <option value="box" selected>Quader</option>
+                        <option value="cylinder">Zylinder</option>
+                        <option value="sphere">Kugel</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-1"></div> <div id="abmessungsEingabenContainer" class="md:col-span-2 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                    </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end mt-4">
+                 <div>
+                    <label for="produktAnzahl" class="block text-sm font-medium text-gray-700 mb-1">Anzahl</label>
+                    <input type="number" id="produktAnzahl" placeholder="Menge" min="1" value="1" class="w-full">
+                </div>
+                <div>
+                    <label for="produktFarbe" class="block text-sm font-medium text-gray-700 mb-1">Farbe</label>
+                    <input type="color" id="produktFarbe" value="#3498db" class="w-full h-10 p-1">
+                </div>
+                 <div class="flex items-center space-x-2 pt-4">
+                    <input type="checkbox" id="produktIstZerbrechlich" class="form-checkbox h-5 w-5 text-indigo-600">
+                    <label for="produktIstZerbrechlich" class="text-sm font-medium text-gray-700">Zerbrechlich?</label>
+                </div>
+            </div>
+             <div class="mt-4 border-t pt-4">
+                <h3 class="text-md font-semibold text-gray-700 mb-2">Verschachtelungs-Optionen:</h3>
+                <div class="flex items-center space-x-2 mb-2">
+                    <input type="checkbox" id="produktKannAnderesEnthalten" class="form-checkbox h-5 w-5 text-indigo-600">
+                    <label for="produktKannAnderesEnthalten" class="text-sm font-medium text-gray-700">Kann andere Produkte enthalten? (Behälter)</label>
+                </div>
+                <div id="innenvolumenOptionenContainer" class="innenvolumenOptionen hidden">
+                    <label for="innenvolumenForm" class="block text-sm font-medium text-gray-700 mb-1">Innenvolumen-Form:</label>
+                    <select id="innenvolumenForm" class="w-full mb-2">
+                        <option value="box">Quader</option>
+                        <option value="cylinder" selected>Zylinder</option>
+                    </select>
+                    <div id="innenvolumenAbmessungenContainer">
+                        </div>
+                </div>
+                 <div class="flex items-center space-x-2 mt-3">
+                    <input type="checkbox" id="produktKannInAnderemPlatziertWerden" class="form-checkbox h-5 w-5 text-indigo-600">
+                    <label for="produktKannInAnderemPlatziertWerden" class="text-sm font-medium text-gray-700">Kann in anderen Produkten platziert werden? (Verschachtelbar)</label>
+                </div>
+            </div>
+
+            <div class="flex items-end mt-6">
+                 <button id="produktHinzufuegenKnopf" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md shadow h-10">Produkt hinzufügen</button>
+            </div>
+            <div id="abmessungsWarnung" class="mt-3 text-sm text-yellow-700 p-3 bg-yellow-100 border border-yellow-400 rounded-md hidden"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">Produktliste zum Verpacken:</h2>
+            <div id="produktListe" class="listenContainer max-h-60 overflow-y-auto space-y-2 border p-3 rounded-md bg-gray-50">
+                <p class="text-gray-500 italic">Noch keine Produkte hinzugefügt.</p>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6 text-center">
+             <h2 class="text-xl font-semibold mb-3 text-gray-700">3. Verpacken & Visualisieren</h2>
+             <button id="optimaleKisteFindenKnopf" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-3 px-8 rounded-md shadow text-lg">Optimale Kiste finden & Verpacken</button>
+             <button id="allesZuruecksetzenKnopf" class="ml-4 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 px-8 rounded-md shadow text-lg">Alles zurücksetzen</button>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+            <h2 class="text-xl font-semibold mb-3 text-gray-700">Ausgewählte optimale Kiste & Verpackungsstatistiken</h2>
+            <div id="ausgewaehlteKistenInfo" class="mb-4 p-3 bg-indigo-50 rounded-md border border-indigo-200">
+                <p class="text-gray-700">Name: <span id="ausgewaehlterKistenName" class="font-medium">N/A</span></p>
+                <p class="text-gray-700">Abmessungen (BHT): 
+                    <span id="ausgewaehlteKistenBreite" class="font-medium">0</span> cm x 
+                    <span id="ausgewaehlteKistenHoehe" class="font-medium">0</span> cm x 
+                    <span id="ausgewaehlteKistenTiefe" class="font-medium">0</span> cm
+                </p>
+            </div>
+            <p>Kistenvolumen: <span id="statKistenVolumen" class="font-medium">0</span> cm³</p>
+            <p>Zu verpackende Produkte (gesamt): <span id="statAnzahlProdukteZuVerpacken" class="font-medium">0</span></p>
+            <p>Verpackte Produkte (in Kiste + verschachtelt): <span id="statAnzahlVerpackteProdukte" class="font-medium">0</span></p>
+            <p>Gesamtvolumen der verpackten Produkte: <span id="statVerpacktesVolumen" class="font-medium">0</span> cm³</p>
+            <p>Volumetrische Effizienz: <span id="statEffizienz" class="font-medium">0</span>%</p>
+        </div>
+    </div>
+
+    <div id="visualisierungsContainer" class="w-full max-w-4xl mx-auto mb-10 rounded-lg shadow-xl overflow-hidden">
+        <canvas id="visualisierungsLeinwand"></canvas>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
